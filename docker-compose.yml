@@ -1,0 +1,69 @@
+version: '3'
+
+services:
+  zookeeper:
+    image: 'tgiesela/zookeeper:v0.1'
+    build: 
+       context: ./zookeeper
+       args:
+          - "ZOOKEEPERPORT:2181"
+          - "ZOOKEEPERADMINPORT:8080"
+    container_name: zookeeper
+    ports:
+      - '2181:2181'
+      - '8080:8080'
+    volumes:
+      - /dockerdata:/tgiesela
+    environment:
+      - ZOOKEEPER_PORT=2181
+      - ZOOKEEPERADMIN_PORT=8080
+      - TZ=Europe/Amsterdam
+    restart: always
+
+  kafka:
+    image: 'tgiesela/kafka:v0.1'
+    build: 
+       context: ./kafka
+       args:
+          - "KAFKAPORT:9092"
+          - "ZOOKEEPERPORT:2181"
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - '9092:9092'
+    volumes:
+      - /dockerdata:/tgiesela
+    environment:
+      - KAFKA_PORT=9092
+      - KAFKA_IP=10.56.57.174
+      - ZOOKEEPER_PORT=2181
+      - KAFKA_LOGDIR=/tgiesela
+      - TZ=Europe/Amsterdam
+    restart: always
+
+  kafka-manager:
+    image: 'tgiesela/cmak:v0.1'
+    build: 
+       context: ./cmak
+       args:
+          - "KAFKAMANAGERPORT:9000"
+    container_name: kafkamanager
+    depends_on:
+      - zookeeper
+    ports:
+      - '9000:9000'
+    volumes:
+      - /dockerdata/kafkamanager:/config
+    environment:
+      - ZOOKEEPER_PORT=2181
+      - ZOOKEEPER_HOST=zookeeper
+      - TZ=Europe/Amsterdam
+    restart: always
+
+
+volumes:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local
